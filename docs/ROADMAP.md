@@ -60,12 +60,14 @@ Deliverables:
 - [x] Store raw scanner artifacts under the run.
 - [x] Store normalized findings in Mongo.
 - [x] Add frontend control to launch code review scans from run detail.
-- [ ] Add dedupe before inserting scanner findings.
+- [x] Add dedupe before inserting scanner findings.
+- [x] Add root developer task runner.
 
 Exit criteria:
 
 - A repo path or uploaded diff can be scanned from the platform API.
 - Results appear in the existing findings and report views.
+- Repeated scanner runs do not duplicate already-imported findings.
 
 ## Milestone 4: Code Guardian
 

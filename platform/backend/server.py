@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agent_runtime_service import AGENT_ORDER, build_agent_prompt, handoff_summary
 from database import clean_document, database
+from finding_dedupe import filter_duplicate_findings
 from llm_service import run_prompt_analysis, run_provider_analysis
 from model_catalog_service import refresh_openrouter_catalog
 from models import AgentWorkflowRequest, AnalysisRequest, CodeReviewScannerRequest, ModelCatalogRefreshRequest, PolicyUpdate, ProviderUpdate, RoutingDefaultUpdate, RoutingPolicyUpdate, RunCreate, ScannerImportRequest, SectionUpsert, TargetCreate, now_iso
@@ -1172,7 +1173,11 @@ async def import_scanner_output(run_id: str, payload: ScannerImportRequest):
             else:
                 skipped_items.append(f"Block {index}: {reason}")
 
+    normalized_findings, duplicate_count = await filter_duplicate_findings(database, run_id, normalized_findings)
+
     if not normalized_findings:
+        if duplicate_count:
+            raise HTTPException(status_code=400, detail=f"No new findings were imported. {duplicate_count} duplicate item(s) were skipped.")
         raise HTTPException(status_code=400, detail="No valid findings were detected. Each item needs at least a title and severity.")
 
     await database.findings.insert_many(normalized_findings)
@@ -1201,7 +1206,7 @@ async def import_scanner_output(run_id: str, payload: ScannerImportRequest):
 
     summary = (
         f"Imported {len(normalized_findings)} normalized finding(s) from {payload.source_name} "
-        f"using {payload.import_format.upper()} input. Skipped {len(skipped_items)} item(s)."
+        f"using {payload.import_format.upper()} input. Skipped {len(skipped_items)} invalid item(s) and {duplicate_count} duplicate item(s)."
     )
     await database.tasks.update_one(
         {"audit_run_id": run_id, "task_type": "evidence_normalizer"},
@@ -1214,7 +1219,8 @@ async def import_scanner_output(run_id: str, payload: ScannerImportRequest):
         "bundle": await get_run_bundle(run_id),
         "summary": {
             "imported_count": len(normalized_findings),
-            "skipped_count": len(skipped_items),
+            "skipped_count": len(skipped_items) + duplicate_count,
+            "duplicate_count": duplicate_count,
             "detected_count": detected_count,
             "source_name": payload.source_name,
             "import_format": payload.import_format,
@@ -1266,6 +1272,8 @@ async def run_code_review_scanner(run_id: str, payload: CodeReviewScannerRequest
         else:
             skipped_items.append(f"Finding {index}: {reason}")
 
+    normalized_findings, duplicate_count = await filter_duplicate_findings(database, run_id, normalized_findings)
+
     if normalized_findings:
         await database.findings.insert_many(normalized_findings)
 
@@ -1298,7 +1306,7 @@ async def run_code_review_scanner(run_id: str, payload: CodeReviewScannerRequest
 
     summary = (
         f"Code review scan completed with {scan_result['total_findings']} raw finding(s), "
-        f"{len(normalized_findings)} imported, {len(skipped_items)} skipped."
+        f"{len(normalized_findings)} imported, {len(skipped_items)} invalid skipped, {duplicate_count} duplicate skipped."
     )
     await database.tasks.update_one(
         {"id": job_task["id"]},
@@ -1319,7 +1327,8 @@ async def run_code_review_scanner(run_id: str, payload: CodeReviewScannerRequest
             "target": scan_result["target"],
             "raw_count": scan_result["total_findings"],
             "imported_count": len(normalized_findings),
-            "skipped_count": len(skipped_items),
+            "skipped_count": len(skipped_items) + duplicate_count,
+            "duplicate_count": duplicate_count,
             "findings_file": scan_result["findings_file"],
             "report_file": scan_result["report_file"],
             "skipped_items": skipped_items[:5],

@@ -59,6 +59,16 @@ python code_red_seeker.py platform
 
 The wrapper currently delegates scanner commands to `engines/swarm-review/swarm_review_cli.py`.
 
+## Developer Tasks
+
+```bash
+make py-compile
+make test-scanner
+make smoke-review
+make frontend-install
+make frontend-build
+```
+
 ## Product Model
 
 Code Red Seeker should be built as a control plane plus engines:
@@ -156,7 +166,7 @@ Integrations
 
 - Root CLI can delegate code review scans into the SwarmReview engine.
 - Platform backend has `POST /api/runs/{run_id}/scanner-jobs/code-review`.
-- The scanner job runs SwarmReview, imports normalized findings, and appends raw scanner output to the run's `tool-output` artifact.
+- The scanner job runs SwarmReview, dedupes normalized findings, and appends raw scanner output to the run's `tool-output` artifact.
 - The run detail frontend exposes a Code Red Seeker scanner panel on the Findings tab.
 
 See `HANDOFF.md` for next-agent instructions.

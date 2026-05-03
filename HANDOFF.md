@@ -29,6 +29,11 @@ The repo is public at the moment but is expected to become private before real u
 - Fixed root CLI argument passthrough and root-relative path normalization.
 - Fixed SwarmReview JSON writer compatibility and removed an unused `entropy` dependency import.
 - Added a Code Red Seeker scanner panel to `platform/frontend/src/pages/RunDetailPage.jsx`.
+- Added finding fingerprint/dedupe helper and tests.
+- Added root `Makefile` developer tasks.
+- Installed frontend dependencies and committed `platform/frontend/package-lock.json`.
+- Verified `npm --prefix platform/frontend run build`.
+- Renamed the frontend package to `code-red-seeker-frontend`.
 
 ## Current Layout
 
@@ -72,11 +77,11 @@ C:\Users\limap\code-red-seeker
 
 Build the scanner bridge hardening and developer ergonomics:
 
-1. Add duplicate-finding prevention in the backend before `insert_many`.
-2. Add a root setup/run script or Makefile for platform backend, frontend, and scanner tests.
-3. Install frontend dependencies and run `npm --prefix platform/frontend run build`.
-4. Start the platform locally and verify the Findings tab scanner panel with a repo target.
-5. Add GitHub PR target support beyond local repo path scanning.
+1. Start the platform locally and verify the Findings tab scanner panel with a repo target.
+2. Add GitHub PR target support beyond local repo path scanning.
+3. Move scanner execution into a proper async worker/queue instead of blocking the API request.
+4. Add scanner finding fingerprints to the UI detail view.
+5. Triage the npm audit output: current install reports 29 dependency vulnerabilities from the inherited frontend stack.
 
 ## Files To Read First
 

@@ -1,0 +1,30 @@
+# SwarmReview — Authorization Policy
+# ----------------------------------------
+# This file MUST exist and be valid before the swarm will execute.
+# Update allow.targets to the domains/IPs you have explicit permission to test.
+#
+# Schema
+# ------
+# version:   str          — policy format version (required)
+# allow:
+#   targets: list[str]   — authorized domains / IPs (required, non-empty)
+#   actions: list[str]   — permitted scan types (required, non-empty)
+# deny:      mapping      — optional explicit denials (overrides allow)
+
+version: "1"
+
+allow:
+  targets:
+    # Replace with domains you are explicitly authorized to test.
+    # Subdomains are covered by the scope.json allowlist; entries here
+    # declare top-level authorization intent.
+    - example.com
+  actions:
+    - recon
+    - crawl
+    - enrichment
+    - vuln_scan
+
+# deny:                    # optional — add to block specific sub-actions
+#   actions:
+#     - active_exploit

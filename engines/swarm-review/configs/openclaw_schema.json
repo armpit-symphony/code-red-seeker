@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "fields": {
+    "target": "string",
+    "profile": "string",
+    "reports": {
+      "json": "string",
+      "markdown": "string",
+      "html": "string"
+    },
+    "evidence_zip": "string|null",
+    "tech_detected": "array",
+    "vuln_scan": "object|null"
+  }
+}

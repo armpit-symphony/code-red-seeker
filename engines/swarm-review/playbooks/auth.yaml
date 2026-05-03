@@ -1,0 +1,8 @@
+name: AUTH
+steps:
+  - login_flow: "Review login form, transport, and headers."
+  - reset_flow: "Check reset flow for enumeration and weak tokens."
+  - session: "Validate cookie flags and session rotation."
+evidence:
+  - request_response
+  - header_capture

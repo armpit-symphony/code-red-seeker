@@ -1,0 +1,8 @@
+name: IDOR
+steps:
+  - identify_objects: "Identify object IDs in paths or parameters."
+  - access_control: "Test access with different IDs or roles."
+  - data_exposure: "Look for sensitive fields in responses."
+evidence:
+  - request_response
+  - unauthorized_access_proof

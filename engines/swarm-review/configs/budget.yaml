@@ -1,0 +1,4 @@
+requests:
+  max_per_minute: 120
+  max_per_run: 1000
+evidence_level: standard

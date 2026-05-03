@@ -1,0 +1,13 @@
+{
+  "triaged_findings": [
+    {
+      "type": "XSS",
+      "severity": "HIGH",
+      "url": "https://example.com/search?q=x",
+      "confidence": 0.8,
+      "playbook": {
+        "evidence": ["request_response"]
+      }
+    }
+  ]
+}

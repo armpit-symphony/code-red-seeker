@@ -1,0 +1,8 @@
+name: SQLi
+steps:
+  - identify_inputs: "Locate parameters that hit database queries."
+  - error_based: "Inject quotes and observe SQL errors."
+  - time_based: "Use time delay payloads for confirmation."
+evidence:
+  - request_response
+  - timing_diff

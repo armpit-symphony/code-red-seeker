@@ -1,0 +1,8 @@
+name: SSRF
+steps:
+  - identify_params: "Locate URL/host parameters."
+  - internal_probe: "Attempt access to internal or metadata endpoints."
+  - confirm_oob: "Prefer out-of-band confirmation where possible."
+evidence:
+  - request_response
+  - timing_or_error_indicators

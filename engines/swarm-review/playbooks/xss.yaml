@@ -1,0 +1,8 @@
+name: XSS
+steps:
+  - identify_reflection: "Check if user input reflects unescaped in response."
+  - context: "Determine HTML/JS/attribute context."
+  - payload: "Try minimal payloads to validate execution."
+evidence:
+  - request_response
+  - screenshot_if_visible

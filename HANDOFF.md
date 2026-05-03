@@ -34,6 +34,11 @@ The repo is public at the moment but is expected to become private before real u
 - Installed frontend dependencies and committed `platform/frontend/package-lock.json`.
 - Verified `npm --prefix platform/frontend run build`.
 - Renamed the frontend package to `code-red-seeker-frontend`.
+- Migrated the frontend from CRA/CRACO/react-scripts to Vite.
+- Removed `craco.config.js`, CRA proxy setup, and CRA `public/index.html`.
+- Added `platform/frontend/vite.config.js` and root Vite `index.html`.
+- Renamed React JSX entry files to `src/index.jsx` and `src/App.jsx`.
+- Rebuilt the frontend and verified `npm --prefix platform/frontend audit --json` reports zero vulnerabilities.
 
 ## Current Layout
 
@@ -81,7 +86,7 @@ Build the scanner bridge hardening and developer ergonomics:
 2. Add GitHub PR target support beyond local repo path scanning.
 3. Move scanner execution into a proper async worker/queue instead of blocking the API request.
 4. Add scanner finding fingerprints to the UI detail view.
-5. Triage the npm audit output: current install reports 29 dependency vulnerabilities from the inherited frontend stack.
+5. Consider code-splitting the frontend bundle; Vite currently warns that the main JS chunk is larger than 500 kB after minification.
 
 ## Files To Read First
 

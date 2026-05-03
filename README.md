@@ -168,5 +168,6 @@ Integrations
 - Platform backend has `POST /api/runs/{run_id}/scanner-jobs/code-review`.
 - The scanner job runs SwarmReview, dedupes normalized findings, and appends raw scanner output to the run's `tool-output` artifact.
 - The run detail frontend exposes a Code Red Seeker scanner panel on the Findings tab.
+- The frontend build stack has been migrated from CRA/CRACO to Vite; `npm audit` reports zero vulnerabilities after the migration.
 
 See `HANDOFF.md` for next-agent instructions.

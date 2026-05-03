@@ -127,7 +127,7 @@ Exit criteria:
 
 ## Milestone 7: Private Service Readiness
 
-Status: not started.
+Status: started.
 
 Deliverables:
 
@@ -137,6 +137,13 @@ Deliverables:
 - Production deployment profile.
 - Backup and retention policy.
 - Internal operating runbook.
+- Frontend dependency hardening.
+
+Completed:
+
+- Replaced inherited CRA/CRACO frontend build stack with Vite.
+- Reduced frontend dependency tree from 1,371 audited packages to 163.
+- Reduced npm audit vulnerabilities from 29 to 0.
 
 Exit criteria:
 

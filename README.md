@@ -152,4 +152,11 @@ Integrations
 - `armpit-symphony/red-spark-team` became `platform/`.
 - `armpit-symphony/swarm-review` became `engines/swarm-review/`.
 
+## Current Integration Status
+
+- Root CLI can delegate code review scans into the SwarmReview engine.
+- Platform backend has `POST /api/runs/{run_id}/scanner-jobs/code-review`.
+- The scanner job runs SwarmReview, imports normalized findings, and appends raw scanner output to the run's `tool-output` artifact.
+- The run detail frontend exposes a Code Red Seeker scanner panel on the Findings tab.
+
 See `HANDOFF.md` for next-agent instructions.

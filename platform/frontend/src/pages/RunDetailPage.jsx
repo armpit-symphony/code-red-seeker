@@ -57,6 +57,9 @@ export default function RunDetailPage() {
   const [importDraft, setImportDraft] = useState(initialImportDraft);
   const [importSummary, setImportSummary] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [scannerProfile, setScannerProfile] = useState('review-cautious');
+  const [scannerSummary, setScannerSummary] = useState(null);
+  const [isRunningScanner, setIsRunningScanner] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [exportingAction, setExportingAction] = useState('');
   const [isRunningAgents, setIsRunningAgents] = useState(false);
@@ -140,6 +143,22 @@ export default function RunDetailPage() {
       toast.error(error.message);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const runCodeReviewScanner = async () => {
+    try {
+      setIsRunningScanner(true);
+      const result = await api.post(`/runs/${runId}/scanner-jobs/code-review`, { profile: scannerProfile });
+      setBundle(result.bundle);
+      setSectionDrafts(syncSectionDrafts(result.bundle.sections));
+      setScannerSummary(result.summary);
+      setImportSummary(null);
+      toast.success(`Code review imported ${result.summary.imported_count} finding(s)`);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsRunningScanner(false);
     }
   };
 
@@ -257,6 +276,43 @@ export default function RunDetailPage() {
 
         {activeTab === 'findings' ? (
           <section className="stack" data-testid="run-detail-findings-view">
+            <article className="form-shell" data-testid="code-review-scanner-panel">
+              <div className="panel-header">
+                <div>
+                  <div className="eyebrow">Code Red Seeker</div>
+                  <h2 className="panel-title">Run code review scanner</h2>
+                  <p className="panel-copy" data-testid="code-review-scanner-copy">Runs the merged SwarmReview engine against this run target and imports normalized findings into the workspace.</p>
+                </div>
+                <Button onClick={runCodeReviewScanner} disabled={isRunningScanner} variant="primary" data-testid="code-review-scanner-run-button">
+                  {isRunningScanner ? 'Scanning...' : 'Run scanner'}
+                </Button>
+              </div>
+              <div className="field-grid" style={{ marginTop: 16 }}>
+                <div className="field">
+                  <label className="field-label">Review profile</label>
+                  <select className="select" value={scannerProfile} onChange={(event) => setScannerProfile(event.target.value)} data-testid="code-review-scanner-profile-select">
+                    <option value="review-passive">Passive: SAST only</option>
+                    <option value="review-cautious">Cautious: SAST and secrets</option>
+                    <option value="review-deep">Deep: all review passes</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label className="field-label">Target</label>
+                  <div className="panel-copy mono" data-testid="code-review-scanner-target">{run.target_locator}</div>
+                </div>
+              </div>
+              {scannerSummary ? (
+                <div className="import-summary" data-testid="code-review-scanner-summary">
+                  <div className="button-row">
+                    <span className="badge" data-testid="code-review-scanner-raw-count">Raw {scannerSummary.raw_count}</span>
+                    <span className="badge" data-testid="code-review-scanner-imported-count">Imported {scannerSummary.imported_count}</span>
+                    <span className="badge" data-testid="code-review-scanner-skipped-count">Skipped {scannerSummary.skipped_count}</span>
+                  </div>
+                  <div className="muted" style={{ marginTop: 12 }} data-testid="code-review-scanner-artifact-path">{scannerSummary.findings_file}</div>
+                </div>
+              ) : null}
+            </article>
+
             <article className="form-shell" data-testid="scanner-import-panel">
               <div className="panel-header">
                 <div>

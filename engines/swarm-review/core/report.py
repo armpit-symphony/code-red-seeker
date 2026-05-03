@@ -11,19 +11,31 @@ def _ensure_dir(path: str) -> None:
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def write_json(output_dir: str, name: str, data: dict) -> str:
-    _ensure_dir(output_dir)
-    path = Path(output_dir) / f"{name}.json"
+def write_json(output_dir: str, name: str | dict, data: dict | None = None) -> str:
+    if data is None:
+        path = Path(output_dir)
+        _ensure_dir(str(path.parent))
+        payload = name
+    else:
+        _ensure_dir(output_dir)
+        path = Path(output_dir) / f"{name}.json"
+        payload = data
     with open(path, "w") as f:
-        json.dump(data, f, indent=2)
+        json.dump(payload, f, indent=2)
     return str(path)
 
 
-def write_markdown(output_dir: str, name: str, md: str) -> str:
-    _ensure_dir(output_dir)
-    path = Path(output_dir) / f"{name}.md"
+def write_markdown(output_dir: str, name: str, md: str | None = None) -> str:
+    if md is None:
+        path = Path(output_dir)
+        _ensure_dir(str(path.parent))
+        content = name
+    else:
+        _ensure_dir(output_dir)
+        path = Path(output_dir) / f"{name}.md"
+        content = md
     with open(path, "w") as f:
-        f.write(md)
+        f.write(content)
     return str(path)
 
 

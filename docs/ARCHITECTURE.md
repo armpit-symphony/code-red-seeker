@@ -52,6 +52,20 @@ Responsibilities:
 
 This CLI is temporary. Later it should become a real package entrypoint.
 
+### Scanner Job Bridge
+
+Path: `platform/backend/scanner_jobs.py`
+
+Endpoint: `POST /api/runs/{run_id}/scanner-jobs/code-review`
+
+Responsibilities:
+
+- Resolve a platform run target to a local repo path.
+- Execute `engines/swarm-review/swarm_review_cli.py review`.
+- Collect SwarmReview JSON and Markdown artifacts.
+- Return raw scanner findings to `platform/backend/server.py` for normalization.
+- Store scanner artifacts under `artifacts/scanner-runs/<run_id>/`.
+
 ## Target End State
 
 ```text

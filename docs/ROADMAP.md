@@ -54,11 +54,13 @@ Status: not started.
 
 Deliverables:
 
-- Add `platform/backend/scanner_jobs.py`.
-- Add backend endpoint to launch a code review scan.
-- Add run status transitions: queued, running, completed, failed.
-- Store raw scanner artifacts under the run.
-- Store normalized findings in Mongo.
+- [x] Add `platform/backend/scanner_jobs.py`.
+- [x] Add backend endpoint to launch a code review scan.
+- [x] Add run status transitions for scanner execution.
+- [x] Store raw scanner artifacts under the run.
+- [x] Store normalized findings in Mongo.
+- [x] Add frontend control to launch code review scans from run detail.
+- [ ] Add dedupe before inserting scanner findings.
 
 Exit criteria:
 

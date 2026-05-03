@@ -23,6 +23,12 @@ The repo is public at the moment but is expected to become private before real u
 - Added `docs/ROADMAP.md`.
 - Added `docs/ARCHITECTURE.md`.
 - Added this handoff file.
+- Added `platform/backend/scanner_jobs.py`.
+- Added `POST /api/runs/{run_id}/scanner-jobs/code-review`.
+- Added `platform/backend/tests/test_scanner_jobs.py`.
+- Fixed root CLI argument passthrough and root-relative path normalization.
+- Fixed SwarmReview JSON writer compatibility and removed an unused `entropy` dependency import.
+- Added a Code Red Seeker scanner panel to `platform/frontend/src/pages/RunDetailPage.jsx`.
 
 ## Current Layout
 
@@ -64,14 +70,13 @@ C:\Users\limap\code-red-seeker
 
 ## Next Best Task
 
-Build the bridge from scanner engine to platform:
+Build the scanner bridge hardening and developer ergonomics:
 
-1. Add a backend module in `platform/backend/` that can run `engines/swarm-review/swarm_review_cli.py review`.
-2. Capture the JSON output path.
-3. Normalize findings into the platform `findings` collection.
-4. Attach the raw scanner JSON and Markdown report as artifacts.
-5. Add an API endpoint like `POST /api/runs/{run_id}/scanner-jobs/code-review`.
-6. Add frontend action on the run detail page to start a code review scan.
+1. Add duplicate-finding prevention in the backend before `insert_many`.
+2. Add a root setup/run script or Makefile for platform backend, frontend, and scanner tests.
+3. Install frontend dependencies and run `npm --prefix platform/frontend run build`.
+4. Start the platform locally and verify the Findings tab scanner panel with a repo target.
+5. Add GitHub PR target support beyond local repo path scanning.
 
 ## Files To Read First
 

@@ -4,6 +4,11 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest_cache_local/
+.test-tmp/
+pytest-cache*/
+pytest-cache-files-*/
+pytest-work*/
 .mypy_cache/
 .ruff_cache/
 .venv/

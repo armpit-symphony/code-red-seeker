@@ -13,8 +13,9 @@ from agent_runtime_service import AGENT_ORDER, build_agent_prompt, handoff_summa
 from database import clean_document, database
 from llm_service import run_prompt_analysis, run_provider_analysis
 from model_catalog_service import refresh_openrouter_catalog
-from models import AgentWorkflowRequest, AnalysisRequest, ModelCatalogRefreshRequest, PolicyUpdate, ProviderUpdate, RoutingDefaultUpdate, RoutingPolicyUpdate, RunCreate, ScannerImportRequest, SectionUpsert, TargetCreate, now_iso
+from models import AgentWorkflowRequest, AnalysisRequest, CodeReviewScannerRequest, ModelCatalogRefreshRequest, PolicyUpdate, ProviderUpdate, RoutingDefaultUpdate, RoutingPolicyUpdate, RunCreate, ScannerImportRequest, SectionUpsert, TargetCreate, now_iso
 from routing_service import ROUTING_MEMORY_WINDOW, get_policy_telemetry, get_routing_state, sync_routing_policies
+from scanner_jobs import ScannerJobError, run_code_review_scan
 from security_utils import encrypt_secret
 from seed import seed_database
 
@@ -1217,6 +1218,110 @@ async def import_scanner_output(run_id: str, payload: ScannerImportRequest):
             "detected_count": detected_count,
             "source_name": payload.source_name,
             "import_format": payload.import_format,
+            "skipped_items": skipped_items[:5],
+        },
+    }
+
+
+@app.post("/api/runs/{run_id}/scanner-jobs/code-review")
+async def run_code_review_scanner(run_id: str, payload: CodeReviewScannerRequest):
+    run_record = clean_document(await database.runs.find_one({"id": run_id}, {"_id": 0}))
+    if not run_record:
+        raise HTTPException(status_code=404, detail="Run not found.")
+
+    job_task = {
+        "id": str(uuid4()),
+        "audit_run_id": run_id,
+        "title": "Code review scanner",
+        "task_type": "code_review_scanner",
+        "status": "running",
+        "output": f"Running SwarmReview with profile {payload.profile}.",
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await database.tasks.insert_one(job_task)
+    await database.runs.update_one({"id": run_id}, {"$set": {"status": "running", "updated_at": now_iso()}})
+
+    try:
+        scan_result = await run_code_review_scan(run_record, payload.profile, payload.target_path)
+    except ScannerJobError as exc:
+        await database.tasks.update_one(
+            {"id": job_task["id"]},
+            {"$set": {"status": "failed", "output": str(exc)[-2000:], "updated_at": now_iso()}},
+        )
+        await database.runs.update_one({"id": run_id}, {"$set": {"status": "failed", "updated_at": now_iso()}})
+        await log_event("failed-code-review-scan", f"Code review scan failed for run {run_id}: {exc}")
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    normalized_findings: list[dict[str, Any]] = []
+    skipped_items: list[str] = []
+    for index, item in enumerate(scan_result["findings"], start=1):
+        finding, reason = normalize_json_candidate(item, run_id, "Code Red Seeker / SwarmReview")
+        if finding:
+            finding["source_name"] = item.get("tool") or finding["source_name"]
+            finding["source_rule_id"] = first_non_empty(item.get("test_id"), item.get("check_id"), item.get("vuln_type"), item.get("secret_type"))
+            finding["scanner_engine"] = scan_result["engine"]
+            finding["scanner_profile"] = payload.profile
+            normalized_findings.append(finding)
+        else:
+            skipped_items.append(f"Finding {index}: {reason}")
+
+    if normalized_findings:
+        await database.findings.insert_many(normalized_findings)
+
+    raw_json = json.dumps(scan_result["findings_payload"], indent=2)
+    artifact_content = build_import_excerpt(raw_json, "Code Red Seeker / SwarmReview", "json")
+    if scan_result.get("report_markdown"):
+        artifact_content = f"{artifact_content}\n\n---\n\n## SwarmReview Markdown Report\n\n{scan_result['report_markdown']}"
+    artifact_content = f"{artifact_content}\n\n---\n\nArtifacts directory: `{scan_result['out_dir']}`"
+
+    artifact = clean_document(await database.artifacts.find_one({"audit_run_id": run_id, "section_key": "tool-output"}, {"_id": 0})) or {}
+    existing_content = artifact.get("content", "").strip()
+    merged_content = artifact_content if not existing_content else f"{existing_content}\n\n---\n\n{artifact_content}"
+
+    await database.artifacts.update_one(
+        {"audit_run_id": run_id, "section_key": "tool-output"},
+        {
+            "$set": {
+                "id": artifact.get("id", str(uuid4())),
+                "audit_run_id": run_id,
+                "section_key": "tool-output",
+                "title": artifact.get("title", "Tool Output"),
+                "content": merged_content,
+                "format": "markdown",
+                "created_at": artifact.get("created_at", now_iso()),
+                "updated_at": now_iso(),
+            }
+        },
+        upsert=True,
+    )
+
+    summary = (
+        f"Code review scan completed with {scan_result['total_findings']} raw finding(s), "
+        f"{len(normalized_findings)} imported, {len(skipped_items)} skipped."
+    )
+    await database.tasks.update_one(
+        {"id": job_task["id"]},
+        {"$set": {"status": "completed", "output": summary, "updated_at": now_iso()}},
+    )
+    await database.tasks.update_one(
+        {"audit_run_id": run_id, "task_type": "evidence_normalizer"},
+        {"$set": {"status": "completed", "output": summary}},
+    )
+    await database.runs.update_one({"id": run_id}, {"$set": {"status": "completed", "updated_at": now_iso()}})
+    await log_event("completed-code-review-scan", summary)
+
+    return {
+        "bundle": await get_run_bundle(run_id),
+        "summary": {
+            "engine": scan_result["engine"],
+            "profile": payload.profile,
+            "target": scan_result["target"],
+            "raw_count": scan_result["total_findings"],
+            "imported_count": len(normalized_findings),
+            "skipped_count": len(skipped_items),
+            "findings_file": scan_result["findings_file"],
+            "report_file": scan_result["report_file"],
             "skipped_items": skipped_items[:5],
         },
     }

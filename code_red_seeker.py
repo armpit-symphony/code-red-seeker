@@ -15,13 +15,35 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SWARM_CLI = ROOT / "engines" / "swarm-review" / "swarm_review_cli.py"
+PATH_FLAGS = {"--repo", "--diff", "--out", "--summary-json", "--artifact-dir", "--auth", "--scope"}
 
 
 def run_swarm(args: list[str]) -> int:
     if not SWARM_CLI.exists():
         print(f"Missing SwarmReview engine CLI: {SWARM_CLI}", file=sys.stderr)
         return 2
-    return subprocess.call([sys.executable, str(SWARM_CLI), *args], cwd=str(SWARM_CLI.parent))
+    return subprocess.call([sys.executable, str(SWARM_CLI), *normalize_path_args(args)], cwd=str(SWARM_CLI.parent))
+
+
+def normalize_path_args(args: list[str]) -> list[str]:
+    normalized: list[str] = []
+    pending_path = False
+    for arg in args:
+        if pending_path:
+            normalized.append(resolve_root_path(arg))
+            pending_path = False
+            continue
+        normalized.append(arg)
+        if arg in PATH_FLAGS:
+            pending_path = True
+    return normalized
+
+
+def resolve_root_path(value: str) -> str:
+    path = Path(value).expanduser()
+    if path.is_absolute():
+        return str(path)
+    return str((ROOT / path).resolve())
 
 
 def platform_info() -> int:
@@ -42,26 +64,23 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     review = sub.add_parser("review", help="Run code review against a repo, diff, or PR.")
-    review.add_argument("args", nargs=argparse.REMAINDER, help="Arguments passed to SwarmReview review.")
 
     scan = sub.add_parser("scan", help="Run governed web/security scan workflow.")
-    scan.add_argument("args", nargs=argparse.REMAINDER, help="Arguments passed to SwarmReview scan.")
 
     doctor = sub.add_parser("doctor", help="Run scanner preflight checks.")
-    doctor.add_argument("args", nargs=argparse.REMAINDER, help="Arguments passed to SwarmReview doctor.")
 
     sub.add_parser("platform", help="Show platform location and next steps.")
     return parser
 
 
 def main() -> int:
-    args = build_parser().parse_args()
+    args, engine_args = build_parser().parse_known_args()
     if args.command == "review":
-        return run_swarm(["review", *args.args])
+        return run_swarm(["review", *engine_args])
     if args.command == "scan":
-        return run_swarm(["scan", *args.args])
+        return run_swarm(["scan", *engine_args])
     if args.command == "doctor":
-        return run_swarm(["doctor", *args.args])
+        return run_swarm(["doctor", *engine_args])
     if args.command == "platform":
         return platform_info()
     return 1

@@ -67,6 +67,11 @@ class ScannerImportRequest(BaseModel):
     content: str = Field(min_length=2, max_length=120000)
 
 
+class CodeReviewScannerRequest(BaseModel):
+    profile: Literal["review-passive", "review-cautious", "review-deep", "passive", "cautious", "deep"] = "review-cautious"
+    target_path: str = Field(default="", max_length=500)
+
+
 class ModelCatalogRefreshRequest(BaseModel):
     provider: Literal["openrouter"] = "openrouter"
 

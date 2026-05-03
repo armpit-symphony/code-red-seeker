@@ -11,7 +11,6 @@ import json
 import re
 import subprocess
 import base64
-import entropy
 from pathlib import Path
 from typing import Optional
 
